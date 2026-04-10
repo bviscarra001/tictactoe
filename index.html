@@ -87,20 +87,24 @@
   });
 
   async function init() {
-    const doc = await gameRef.get();
+  const doc = await gameRef.get();
 
-    if (!doc.exists) {
-      player = "X";
-      await gameRef.set({
-        board: Array(9).fill(""),
-        turn: "X"
-      });
-    } else {
-      player = "O";
-    }
-
-    statusText.innerText = "Eres: " + player;
+  if (!doc.exists) {
+    player = "X";
+    await gameRef.set({
+      board: Array(9).fill(""),
+      turn: "X"
+    });
+  } else {
+    // Alternar jugador correctamente
+    const data = doc.data();
+    
+    // Si ya hay X, tú eres O
+    player = data.turn === "X" ? "O" : "X";
   }
+
+  statusText.innerText = "Eres: " + player;
+}
 
   init();
   render();

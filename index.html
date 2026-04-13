@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tic Tac Toe Salas Privadas</title>
+
+<style>
+body{
+  font-family: Arial;
+  text-align:center;
+  margin:0;
+  padding:20px;
+}
+
+.board{
+  display:grid;
+  grid-template-columns:repeat(3,100px);
+  gap:5px;
+  justify-content:center;
+  margin:20px auto;
+}
+
+.cell{
+  width:100px;
+  height:100px;
+  background:#eee;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:2em;
+  cursor:pointer;
+}
+
+button,input{
+  padding:10px;
+  margin:5px;
+  font-size:16px;
+}
+
+#gameArea{
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Tic Tac Toe Online</h1>
+
+<div id="menu">
+  <button onclick="createRoom()">Crear Sala</button><br>
+
+  <input type="text" id="roomInput" placeholder="Código Sala">
+  <button onclick="joinRoom()">Unirse</button>
+</div>
+
+<div id="gameArea">
+  <h2 id="roomCode"></h2>
+  <p id="status">Conectando...</p>
+
+  <div class="board" id="board"></div>
+
+  <button onclick="resetGame()">Reiniciar</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCpGqA769CtodnDMI_u0DkizmM45zs4n9M",
+  authDomain: "elgato777-c333d.firebaseapp.com",
+  projectId: "elgato777-c333d"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let roomId = "";
+let gameRef = null;
+
+let player = "";
+let board = Array(9).fill("");
+let turn = "X";
+let winner = null;
+
+const boardDiv = document.getElementById("board");
+const statusText = document.getElementById("status");
+
+function generateCode(){
+  return Math.random().toString(36).substring(2,7).toUpperCase();
+}
+
+async function createRoom(){
+  roomId = generateCode();
+  gameRef = db.collection("games").doc(roomId);
+
+  await gameRef.set({
+    board:Array(9).fill(""),
+    turn:"X",
+    winner:null,
+    players:1
+  });
+
+  player = "X";
+  startGame();
+}
+
+async function joinRoom(){
+  roomId = document.getElementById("roomInput").value.toUpperCase();
+
+  if(roomId=="") return;
+
+  gameRef = db.collection("games").doc(roomId);
+
+  const doc = await gameRef.get();
+
+  if(!doc.exists){
+    alert("Sala no existe");
+    return;
+  }
+
+  const data = doc.data();
+
+  if(data.players==1){
+    player="O";
+    await gameRef.update({players:2});
+  }else{
+    player="Espectador";
+  }
+
+  startGame();
+}
+
+function startGame(){
+  document.getElementById("menu").style.display="none";
+  document.getElementById("gameArea").style.display="block";
+  document.getElementById("roomCode").innerText="Sala: "+roomId;
+
+  listenGame();
+  render();
+}
+
+function listenGame(){
+  gameRef.onSnapshot((doc)=>{
+    const data = doc.data();
+
+    board = data.board;
+    turn = data.turn;
+    winner = data.winner;
+
+    render();
+
+    if(winner){
+      statusText.innerText =
+      winner=="Empate"
+      ? "Empate 🤝"
+      : "Ganó "+winner+" 🏆";
+    }else{
+      statusText.innerText =
+      "Eres: "+player+" | Turno: "+turn;
+    }
+  });
+}
+
+function render(){
+  boardDiv.innerHTML="";
+
+  board.forEach((cell,i)=>{
+    const div=document.createElement("div");
+    div.className="cell";
+    div.innerText=cell;
+    div.onclick=()=>move(i);
+    boardDiv.appendChild(div);
+  });
+}
+
+function move(i){
+  if(player=="Espectador") return;
+  if(board[i]!="") return;
+  if(turn!=player) return;
+  if(winner) return;
+
+  board[i]=player;
+
+  winner = checkWinner(board);
+
+  if(!winner){
+    turn = player=="X" ? "O":"X";
+  }
+
+  gameRef.set({
+    board,
+    turn,
+    winner,
+    players:2
+  });
+}
+
+function checkWinner(b){
+  const wins=[
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  for(let w of wins){
+    let a=w[0], c=w[1], d=w[2];
+
+    if(b[a]!="" && b[a]==b[c] && b[a]==b[d]){
+      return b[a];
+    }
+  }
+
+  if(!b.includes("")) return "Empate";
+
+  return null;
+}
+
+function resetGame(){
+  gameRef.set({
+    board:Array(9).fill(""),
+    turn:"X",
+    winner:null,
+    players:2
+  });
+}
+</script>
+
+</body>
+</html>

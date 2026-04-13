@@ -130,10 +130,25 @@ function resetGame() {
       await gameRef.set({
         board: Array(9).fill(""),
         turn: "X",
-        winner: null
+        winner: null,
+        players: 1
       });
+
     } else {
-      player = "O";
+      const data = doc.data();
+
+      if (!data.players) data.players = 1;
+
+      if (data.players === 1) {
+        player = "O";
+
+        await gameRef.update({
+          players: 2
+        });
+
+      } else {
+        player = "Espectador";
+      }
     }
 
     gameRef.onSnapshot((doc) => {
@@ -149,19 +164,18 @@ function resetGame() {
         statusText.innerText =
           winner === "Empate"
           ? "Empate :)"
-          : "Ganó: " + winner + " !!";
+          : "Ganó " + winner + " !!";
       } else {
         statusText.innerText =
-          "Eres " + player + " | Turno: " + turn;
+          "Eres: " + player + " | Turno: " + turn;
       }
     });
 
   } catch (error) {
-    statusText.innerText = "Error Firebase";
     console.log(error);
+    statusText.innerText = "Error";
   }
 }
-
   init();
   render();
 </script>

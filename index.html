@@ -112,10 +112,13 @@
     if (board[i] !== "" || turn !== player || winner) return;
 
     board[i] = player;
-    turn = player === "X" ? "O" : "X";
+//    turn = player === "X" ? "O" : "X";
     winner = checkWinner(board);
+    if(!winner){
+      turn=player === "X" ? "O" : "X";
+    }
 
-    gameRef.set({ board, turn });
+    gameRef.set({ board, turn, winner, players: 2 });
   }
 function resetGame() {
   gameRef.set({

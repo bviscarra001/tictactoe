@@ -110,34 +110,54 @@ function resetGame() {
   });
 }
 
-  gameRef.onSnapshot(doc => {
-    if (doc.exists) {
-      const data = doc.data();
-      board = data.board;
-      turn = data.turn;
-      render();
-      statusText.innerText = "Turno: " + turn;
-    }
-  });
+//  gameRef.onSnapshot(doc => {
+  //  if (doc.exists) {
+    //  const data = doc.data();
+      //board = data.board;
+      //turn = data.turn;
+      //render();
+      //statusText.innerText = "Turno: " + turn;
+   // }
+  //});
 
   async function init() {
-  const doc = await gameRef.get();
+    try{
+      const doc = await gameRef.get();
 
-  if (!doc.exists) {
-    player = "X";
-    await gameRef.set({
-      board: Array(9).fill(""),
-      turn: "X"
-      winner: null
-    });
-  } else {
-    // Alternar jugador correctamente
-    const data = doc.data();
+      if (!doc.exists) {
+        player = "X";
+        await gameRef.set({
+          board: Array(9).fill(""),
+          turn: "X"
+          winner: null
+        });
+      } else {
+        player="O";
+      }
+      gameRef.onSnapshot(doc => {
     
-    // Si ya hay X, tú eres O
-    player = data.turn === "X" ? "O" : "X";
+        const data = doc.data();
+        board = data.board;
+        turn = data.turn;
+        winner=data.winner;
+    
+        render();
+        if (winner){
+          statusText.innerText =
+            winner==="Empate"
+            ? "Empate :)"
+            : "Ganó: "+ winner + "!!";
+        }else{
+          statusText.innerText = "Eres " " + player +" |Turno: "+turn;
+        }
+      });
+    } catch (error){
+      statusText.innerText="Error en Firebase";
+      console.log(error);
+    }
   }
-
+    
+  });
   statusText.innerText = "Eres: " + player;
 }
 
